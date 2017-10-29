@@ -66,12 +66,12 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 ## 		statement shown in class.
 CACHE_FNAME = 'tweets.json'
 try:
-	cache_file = open(CACHE_FNAME, 'r') # Opens the file that contains cached information
-	cache_contents = cache_file.read()  # Turns data into python readable content
-	CACHE_DICTION = json.loads(cache_contents) # reads in that file and puts it into a json formatted dictionary
-	cache_file.close() # closes the file
+	cache_file = open(CACHE_FNAME, 'r') #opens cache info
+	cache_contents = cache_file.read()  #is now readable text
+	CACHE_DICTION = json.loads(cache_contents) 
+	cache_file.close() # closes file
 except:
-	CACHE_DICTION = {} # If there is nothing in the file, set cache to an empty dictionary
+	CACHE_DICTION = {} #empty dictionary
 
 
 
@@ -81,29 +81,29 @@ except:
 def caching_data(search_word):
 	if search_word in CACHE_DICTION:
 		print('using cache')
-		return CACHE_DICTION[search_word] # if the term has already been searched and is in the cache dictionary, use that 
+		return CACHE_DICTION[search_word] 
 	else:
 		print('fetching')
-		results = api.search(q=search_word) #if it has not been searched use tweepy to search that term
-		CACHE_DICTION[search_word] = results # adds the tweet term as a key and the results from tweepy as the value
-		dumped = json.dumps(CACHE_DICTION) # creates an object of the updated cache dictionary
+		results = api.search(q=search_word) 
+		CACHE_DICTION[search_word] = results # adds the key (search word) and value (results from tweepy)  
+		dumped = json.dumps(CACHE_DICTION) #update cache dictionary
 		cache_file = open(CACHE_FNAME, 'w')
-		cache_file.write(dumped) # writes the new dictionary in the cache file
+		cache_file.write(dumped) 
 		cache_file.close()
-		return CACHE_DICTION[search_word] # returns the search of the term that is now in the cache dictionary
+		return CACHE_DICTION[search_word] #returns the search word in the dictionary
 
 
 
 ## 3. Using a loop, invoke your function, save the return value in a variable, and explore the 
 ##		data you got back!
-for num in range(3): # range three so the user will be prompted 3 times then the program will end
-	asking_question = input('Enter Tweet term: ') # prompts user with what they want to search
+for num in range(3): #program runs three times
+	asking_question = input('Enter Tweet term: ') #ask user to type in search word
 	search_word = str(asking_question)
-	tweet_data = caching_data(search_word) # calls get_with_caching to either store tweet term data in cache and get data, or just get data from cache 
+	tweet_data = caching_data(search_word) 
 ## 4. With what you learn from the data -- e.g. how exactly to find the 
 ##		text of each tweet in the big nested structure -- write code to print out 
 ## 		content from 5 tweets, as shown in the linked example.
-	for tweet in tweet_data['statuses'][:5]: # takes the top 5 tweets in the data 
-		print('TEXT: {}'.format(tweet['text'])) # states the text of the tweet
-		print('CREATED AT: {}'.format(tweet['created_at'])) # states when the tweet was posted
+	for tweet in tweet_data['statuses'][:5]: #for the top 5 tweets in the data 
+		print('TEXT: {}'.format(tweet['text'])) #prints content of tweet
+		print('CREATED AT: {}'.format(tweet['created_at'])) #states timestamp of tweet
 print('\n')
