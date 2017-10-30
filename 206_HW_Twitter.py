@@ -65,11 +65,12 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 ## 1. Set up the caching pattern start -- the dictionary and the try/except 
 ## 		statement shown in class.
 CACHE_FNAME = 'tweet.json'
+
 try:
 	cache_file = open(CACHE_FNAME, 'r') #opens cache info
 	cache_contents = cache_file.read()  #is now readable text
 	CACHE_DICTION = json.loads(cache_contents) 
-	cache_file.close() # closes file
+	cache_file.close() #closes file
 except:
 	CACHE_DICTION = {} #empty dictionary
 
@@ -78,32 +79,34 @@ except:
 ## 2. Write a function to get twitter data that works with the caching pattern, 
 ## 		so it either gets new data or caches data, depending upon what the input 
 ##		to search for is.
+
 def caching_data(search_word):
-	if search_word in CACHE_DICTION:
-		print('using cache')
-		return CACHE_DICTION[search_word] 
-	else:
+	if search_word not in CACHE_DICTION:
 		print('fetching')
 		results = api.search(q=search_word) 
-		CACHE_DICTION[search_word] = results # adds the key (search word) and value (results from tweepy)  
+		CACHE_DICTION[search_word] = results #adds the key (search word) and value (results from tweepy)  
 		dumped = json.dumps(CACHE_DICTION) #update cache dictionary
 		cache_file = open(CACHE_FNAME, 'w')
 		cache_file.write(dumped) 
 		cache_file.close()
 		return CACHE_DICTION[search_word] #returns the search word in the dictionary
-
+	else:
+		print('using cache')
+		return CACHE_DICTION[search_word] 
 
 
 ## 3. Using a loop, invoke your function, save the return value in a variable, and explore the 
 ##		data you got back!
 for num in range(3): #program runs three times
-	asking_question = input('Enter Tweet term: ') #ask user to type in search word
-	search_word = str(asking_question)
-	tweet_data = caching_data(search_word) 
+	question = input('Enter Tweet term: ') #ask user to type in search word
+	tweet_data = caching_data(question) 
+
 ## 4. With what you learn from the data -- e.g. how exactly to find the 
 ##		text of each tweet in the big nested structure -- write code to print out 
 ## 		content from 5 tweets, as shown in the linked example.
-	for tweet in tweet_data['statuses'][:5]: #for the top 5 tweets in the data 
+	
+
+	for tweet in tweet_data['statuses'][:5]: #top 5 tweets in the data 
 		print('TEXT: {}'.format(tweet['text'])) #prints content of tweet
 		print('CREATED AT: {}'.format(tweet['created_at'])) #states timestamp of tweet
-print('\n')
+		print('\n')
