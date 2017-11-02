@@ -19,6 +19,7 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
 # And we've provided the setup for your cache. But we haven't written any functions for you, so you have to be sure that any function that gets data from the internet relies on caching.
 CACHE_FNAME = "twitter_cache.json"
+
 try:
     cache_file = open(CACHE_FNAME,'r')
     cache_contents = cache_file.read()
