@@ -1,4 +1,3 @@
-# Imaan Munir Thurs 3-4pm
 # Import statements
 import unittest
 import sqlite3
@@ -20,7 +19,6 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
 # And we've provided the setup for your cache. But we haven't written any functions for you, so you have to be sure that any function that gets data from the internet relies on caching.
 CACHE_FNAME = "twitter_cache.json"
-
 try:
     cache_file = open(CACHE_FNAME,'r')
     cache_contents = cache_file.read()
@@ -35,21 +33,18 @@ except:
 # Your function must cache data it retrieves and rely on a cache file!
 
 
-
 def get_tweets():
     if 'umsi' in CACHE_DICTION:
-        print('using cached data')
-        twitter_results = CACHE_DICTION['umsi'] #getting data from cache
-                                
+        print ('Using Cached Data..')
+        twitter_data = CACHE_DICTION['umsi'] #grabbing data from cache
     else:
-        print('getting data from internet')
-        twitter_results = api.user_timeline('umsi')
-        CACHE_DICTION['umsi'] = twitter_results #adding to dictionary 
-        f = open(CACHE_FNAME, 'w') #opening cache file
-        f.write(json.dumps(CACHE_DICTION)) #making dictionary with data/unique input
-        f.close()
-    return twitter_results #returns list
-
+        print ('Getting Data from Internet..')
+        twitter_data = api.user_timeline('umsi') #getting data from Internet
+        CACHE_DICTION['umsi'] = twitter_data #adding to dictionary, new key value-pairing
+        file = open(CACHE_FNAME, 'w') #opens cache file for writing
+        file.write(json.dumps(CACHE_DICTION)) #making whole dictionary holding data and unique input
+        file.close()
+    return twitter_data
 
 
 ## [PART 2]
@@ -61,38 +56,27 @@ def get_tweets():
 ## tweet_text - containing the text that goes with that tweet
 ## retweets - containing the number that represents how many times the tweet has been retweeted
 
-# Below we have provided interim outline suggestions for    what to do, sequentially, in comments.
+# Below we have provided interim outline suggestions for what to do, sequentially, in comments.
 
 # 1 - Make a connection to a new database tweets.sqlite, and create a variable to hold the database cursor.
-
-conn = sqlite3.connect("tweets.db")
+conn = sqlite3.connect('tweets.sqlite')
 cur = conn.cursor()
 
 # 2 - Write code to drop the Tweets table if it exists, and create the table (so you can run the program over and over), with the correct (4) column names and appropriate types for each.
 # HINT: Remember that the time_posted column should be the TIMESTAMP data type!
-
-drop = "DROP TABLE IF EXISTS Tweets"
-cur.execute(drop)
-
-command = "CREATE TABLE Tweets (tweet_id PRIMARY KEY, author TEXT, time_posted TIMESTAMP, tweet_text TEXT, retweets INTEGER)"
-cur.execute(command)
-
+cur.execute('DROP TABLE IF EXISTS Tweets')
+cur.execute('CREATE TABLE Tweets (tweet_id TEXT, author TEXT, time_posted TIMESTAMP, tweet_text TEXT, retweets NUMBER)')
 
 # 3 - Invoke the function you defined above to get a list that represents a bunch of tweets from the UMSI timeline. Save those tweets in a variable called umsi_tweets.
-
 umsi_tweets = get_tweets()
 
 # 4 - Use a for loop, the cursor you defined above to execute INSERT statements, that insert the data from each of the tweets in umsi_tweets into the correct columns in each row of the Tweets database table.
-
-insert_statement = "INSERT INTO Tweets VALUES (?,?,?,?,?)"
 for tweet in umsi_tweets:
-	imp_tweet_data = (tweet["id"], tweet["user"]["screen_name"], tweet["created_at"], tweet["text"], tweet["retweet_count"])
-	cur.execute(insert_statement, imp_tweet_data)
+    tup = tweet['id'], tweet['user']['screen_name'], tweet['created_at'], tweet['text'], tweet['retweet_count']
+    cur.execute('INSERT INTO Tweets (tweet_id, author, time_posted, tweet_text, retweets) VALUES (?, ?, ?, ?, ?)', tup)
 
 #  5- Use the database connection to commit the changes to the database
-
 conn.commit()
-
 # You can check out whether it worked in the SQLite browser! (And with the tests.)
 
 ## [PART 3] - SQL statements
@@ -102,21 +86,17 @@ conn.commit()
     # Mon Oct 09 15:45:45 +0000 2017 - RT @MikeRothCom: Beautiful morning at @UMich - It’s easy to forget to
     # take in the view while running from place to place @umichDLHS  @umich…
 # Include the blank line between each tweet.
-
-
-cur.execute("SELECT time_posted, tweet_text FROM Tweets")
-all_res = cur.fetchall()
-for t in all_res:
-    print (t[0]+"-" + t[1]+"\n")
-
+cur.execute('SELECT time_posted, tweet_text FROM Tweets')
+all_results = cur.fetchall()
+for x in all_results:
+    print(x[0] + ' - ' + x[1] + '\n')
 
 # Select the author of all of the tweets (the full rows/tuples of information) that have been retweeted MORE
 # than 2 times, and fetch them into the variable more_than_2_rts.
 # Print the results
-
-cur.execute("SELECT author FROM Tweets WHERE retweets > 2")
+cur.execute('SELECT author FROM Tweets WHERE retweets > 2')
 more_than_2_rts = cur.fetchall()
-print ('more_than_2_rts = %s' % set(more_than_2_rts))
+print ('more_than_2_rts - %s' % set(more_than_2_rts))
 
 cur.close()
 

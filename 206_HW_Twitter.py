@@ -64,7 +64,7 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 #### Recommended order of tasks: ####
 ## 1. Set up the caching pattern start -- the dictionary and the try/except 
 ## 		statement shown in class.
-CACHE_FNAME = 'tweet.js on'
+CACHE_FNAME = 'tweet.js      on'
 
 try:
 	cache_file = open(CACHE_FNAME, 'r') #opens cache info
