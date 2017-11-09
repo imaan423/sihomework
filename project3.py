@@ -1,8 +1,7 @@
 ## SI 206 2017
-## Project 3
+## Project 3 - Imaan Munir Thurs 3-4pm
 ## Building on HW7, HW8 (and some previous material!)
 
-##THIS STARTER CODE DOES NOT RUN!!
 
 
 ##OBJECTIVE:
