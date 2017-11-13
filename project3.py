@@ -7,7 +7,7 @@
 ##OBJECTIVE:
 ## In this assignment you will be creating database and loading data 
 ## into database.  You will also be performing SQL queries on the data.
-## You will be creating a database file: 206_APIsAndDBs.db
+## You will be creating a database file: 206_APIsAndDBs.sqlite
 
 import unittest
 import itertools
@@ -58,7 +58,7 @@ except:
 
 
 # Define your function get_user_tweets here:
-
+# here I am grabbing all tweets from @user, filling up a cache file, and then returning a dictionary 
 def get_user_tweets(user):
 	if user in CACHE_DICTION:
 		print('using cached data')
@@ -83,28 +83,16 @@ umich_tweets = get_user_tweets('umich')
 
 
 ## Task 2 - Creating database and loading data into database
-conn = sqlite3.connect("206_APIsAndDBs.db")
-cur = conn.cursor()
-cur.execute("DROP TABLE IF EXISTS Tweets")
-cur.execute("DROP TABLE IF EXISTS Users")
-query = """
-			CREATE TABLE Tweets (
-			tweet_id TEXT PRIMARY KEY, 
-			text TEXT, 
-			user_posted TEXT, 
-			time_posted DATETIME, 
-			retweets INTEGER,
-			FOREIGN KEY (user_posted)
-			REFERENCES Users(user_id))"""
+conn = sqlite3.connect("206_APIsAndDBs.sqlite")
+cur = conn.cursor() # 
+cur.execute("DROP TABLE IF EXISTS Tweets") #deleting table Tweets if it already exists 
+cur.execute("DROP TABLE IF EXISTS Users") #deleting table Users if it already exists 
+query = "CREATE TABLE Tweets (tweet_id TEXT PRIMARY KEY, text TEXT, user_posted TEXT, time_posted DATETIME, retweets INTEGER, FOREIGN KEY (user_posted)REFERENCES Users(user_id))"
 cur.execute(query)
 
-query = """
-			CREATE TABLE Users(
-			user_id TEXT PRIMARY KEY,
-			screen_name TEXT,
-			num_favs INTEGER, 
-			description TEXT)"""
+query = "CREATE TABLE Users(user_id TEXT PRIMARY KEY,screen_name TEXT,num_favs INTEGER, description TEXT)"
 cur.execute(query)
+
 
 ## You should load into the Users table:
 # The umich user, and all of the data about users that are mentioned 
@@ -127,21 +115,22 @@ cur.execute(query)
 ## dictionary -- you don't need to do any manipulation of the Tweet 
 ## text to find out which they are! Do some nested data investigation 
 ## on a dictionary that represents 1 tweet to see it!
-
-insert_user = "INSERT INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)"
-insert_tweet = "INSERT INTO Tweets (tweet_id, text, user_posted, time_posted, retweets) VALUES (?,?,?,?,?)"
+ 
+#creating template to use for later
+insert_user = "INSERT INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)" 
+insert_tweet = "INSERT INTO Tweets (tweet_id, text, user_posted, time_posted, retweets) VALUES (?,?,?,?,?)" 
 check_user = "SELECT COUNT(*) FROM Users WHERE screen_name = ?"
 uu = umich_tweets[0]['user']
 values = (uu['id_str'], uu['screen_name'], uu['favourites_count'], uu['description'])
 cur.execute(insert_user, values)
-# cur.execute("INSERT INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)", (uu['id_str'], uu['screen_name'], uu['favourites_count'], uu['description']))
 
-for tweet in umich_tweets:
+
+for tweet in umich_tweets: 
 	mentions = tweet['entities']['user_mentions']
 	reply_acct = tweet['in_reply_to_user_id']
 	
-	if 'retweeted_status' in tweet:
-		rt_user = tweet['retweeted_status']['user']
+	if 'retweeted_status' in tweet: #checking if tweet is retweeted - and if so, add user to table User 
+		rt_user = tweet['retweeted_status']['user'] 
 		values = (rt_user['screen_name'],)
 		cur.execute(check_user, values)
 		count = cur.fetchone()[0]
@@ -151,9 +140,9 @@ for tweet in umich_tweets:
 			cur.execute(insert_user, values)
 
 		values = (tweet['id_str'], tweet['text'], rt_user['id_str'], tweet['created_at'], tweet['retweet_count'])
-		cur.execute(insert_tweet, values)
+		cur.execute(insert_tweet, values) #insert tweet
 	
-	else:
+	else: #don't insert user - insert tweet anyway
 		values = (tweet['id_str'], tweet['text'], tweet['user']['id_str'], tweet['created_at'], tweet['retweet_count'])
 		cur.execute(insert_tweet, values) 
 	
@@ -257,21 +246,21 @@ class Task1(unittest.TestCase):
 
 class Task2(unittest.TestCase):
 	def test_tweets_1(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM Tweets');
 		result = cur.fetchall()
 		self.assertTrue(len(result)>=20, "Testing there are at least 20 records in the Tweets database")
 		conn.close()
 	def test_tweets_2(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM Tweets');
 		result = cur.fetchall()
 		self.assertTrue(len(result[1])==5,"Testing that there are 5 columns in the Tweets table")
 		conn.close()
 	def test_tweets_3(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT tweet_id FROM Tweets');
 		result = cur.fetchall()
@@ -282,21 +271,21 @@ class Task2(unittest.TestCase):
 
 
 	def test_users_1(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM Users');
 		result = cur.fetchall()
 		self.assertTrue(len(result)>=2,"Testing that there are at least 2 distinct users in the Users table")
 		conn.close()
 	def test_users_2(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM Users');
 		result = cur.fetchall()
 		self.assertTrue(len(result)<20,"Testing that there are fewer than 20 users in the users table -- effectively, that you haven't added duplicate users. If you got hundreds of tweets and are failing this, let's talk. Otherwise, careful that you are ensuring that your user id is a primary key!")
 		conn.close()
 	def test_users_3(self):
-		conn = sqlite3.connect('206_APIsAndDBs.db')
+		conn = sqlite3.connect('206_APIsAndDBs.sqlite')
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM Users');
 		result = cur.fetchall()
