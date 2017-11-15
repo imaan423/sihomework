@@ -1,7 +1,6 @@
 ## SI 206 2017
-## Project 3 - Imaan Munir Thurs 3-4pm
+## Project 3 - Imaan Munir 
 ## Building on HW7, HW8 (and some previous material!)
-
 
 
 ##OBJECTIVE:
@@ -17,7 +16,7 @@ import twitter_info # same deal as always...
 import json
 import sqlite3
 
-## Your name: Imaan Munir
+## Your name: Imaan Munir Thursday 3-4pm
 ## The names of anyone you worked with on this project:
 
 #####
