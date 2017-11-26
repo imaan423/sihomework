@@ -1,8 +1,6 @@
 ## SI 206 2017
-## Project 3
+## Project 3 - Imaan Munir 
 ## Building on HW7, HW8 (and some previous material!)
-
-##THIS STARTER CODE DOES NOT RUN!!
 
 
 ##OBJECTIVE:
@@ -18,7 +16,7 @@ import twitter_info # same deal as always...
 import json
 import sqlite3
 
-## Your name:
+## Your name: Imaan Munir Thursday 3-4pm
 ## The names of anyone you worked with on this project:
 
 #####
@@ -49,22 +47,51 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
 CACHE_FNAME = "206_APIsAndDBs_cache.json"
 # Put the rest of your caching setup here:
-
+try:
+    cache_file = open(CACHE_FNAME,'r')
+    cache_contents = cache_file.read()
+    cache_file.close()
+    CACHE_DICTION = json.loads(cache_contents)
+except:
+    CACHE_DICTION = {}
 
 
 # Define your function get_user_tweets here:
+# here I am grabbing all tweets from @user, filling up a cache file, and then returning a dictionary 
+def get_user_tweets(user):
+	if user in CACHE_DICTION:
+		print('using cached data')
+		twitter_results = CACHE_DICTION[user]
 
-
+	else:
+		print('getting data from internet')
+		twitter_results = api.user_timeline(user)
+		CACHE_DICTION[user] = twitter_results
+		f = open(CACHE_FNAME, 'w')
+		f.write(json.dumps(CACHE_DICTION))
+		f.close()
+	return twitter_results
 
 
 
 # Write an invocation to the function for the "umich" user timeline and 
 # save the result in a variable called umich_tweets:
 
-
-
+umich_tweets = get_user_tweets('umich')
+get_user_tweets('GoogleDesign')
 
 ## Task 2 - Creating database and loading data into database
+conn = sqlite3.connect("206_APIsAndDBs.sqlite")
+cur = conn.cursor() # 
+cur.execute("DROP TABLE IF EXISTS Tweets") #deleting table Tweets if it already exists 
+cur.execute("DROP TABLE IF EXISTS Users") #deleting table Users if it already exists 
+query = "CREATE TABLE Tweets (tweet_id TEXT PRIMARY KEY, text TEXT, user_posted TEXT, time_posted DATETIME, retweets INTEGER, FOREIGN KEY (user_posted)REFERENCES Users(user_id))"
+cur.execute(query)
+
+query = "CREATE TABLE Users(user_id TEXT PRIMARY KEY,screen_name TEXT,num_favs INTEGER, description TEXT)"
+cur.execute(query)
+
+
 ## You should load into the Users table:
 # The umich user, and all of the data about users that are mentioned 
 # in the umich timeline. 
@@ -72,14 +99,11 @@ CACHE_FNAME = "206_APIsAndDBs_cache.json"
 # mentioned in the umich timeline, that Twitter user's info should be 
 # in the Users table, etc.
 
-
-
 ## You should load into the Tweets table: 
 # Info about all the tweets (at least 20) that you gather from the 
 # umich timeline.
 # NOTE: Be careful that you have the correct user ID reference in 
 # the user_id column! See below hints.
-
 
 ## HINT: There's a Tweepy method to get user info, so when you have a 
 ## user id or screenname you can find alllll the info you want about 
@@ -89,8 +113,52 @@ CACHE_FNAME = "206_APIsAndDBs_cache.json"
 ## dictionary -- you don't need to do any manipulation of the Tweet 
 ## text to find out which they are! Do some nested data investigation 
 ## on a dictionary that represents 1 tweet to see it!
+ 
+#creating template to use for later
+insert_user = "INSERT INTO Users (user_id, screen_name, num_favs, description) VALUES (?,?,?,?)" 
+insert_tweet = "INSERT INTO Tweets (tweet_id, text, user_posted, time_posted, retweets) VALUES (?,?,?,?,?)" 
+check_user = "SELECT COUNT(*) FROM Users WHERE screen_name = ?"
+uu = umich_tweets[0]['user']
+values = (uu['id_str'], uu['screen_name'], uu['favourites_count'], uu['description'])
+cur.execute(insert_user, values)
 
+usernames = []
+for twitter_handle in CACHE_DICTION:
+    usernames.append(twitter_handle)
 
+for username in usernames:
+    for tweet in CACHE_DICTION[username]:
+            mentions = tweet['entities']['user_mentions']
+	
+            if 'retweeted_status' in tweet: #checking if tweet is retweeted - and if so, add user to table User 
+                    rt_user = tweet['retweeted_status']['user'] 
+                    values = (rt_user['screen_name'],)
+                    cur.execute(check_user, values)
+                    count = cur.fetchone()[0]
+
+                    if(count == 0):
+                            values = (rt_user['id_str'], rt_user['screen_name'], rt_user['favourites_count'], rt_user['description'])
+                            cur.execute(insert_user, values)
+
+                    values = (tweet['id_str'], tweet['text'], rt_user['id_str'], tweet['created_at'], tweet['retweet_count'])
+                    cur.execute(insert_tweet, values) #insert tweet
+	
+            else: #don't insert user - insert tweet anyway
+                    values = (tweet['id_str'], tweet['text'], tweet['user']['id_str'], tweet['created_at'], tweet['retweet_count'])
+                    cur.execute(insert_tweet, values) 
+	
+            if len(mentions) > 0:
+                    for user in mentions:
+                            values = (user['screen_name'],)
+                            cur.execute(check_user, values)
+                            count = cur.fetchone()[0]
+
+                            if(count == 0):
+                                    ui = api.get_user(user['screen_name'])
+                                    values = (ui['id_str'], ui['screen_name'], ui['favourites_count'], ui['description'])
+                                    cur.execute(insert_user, values)
+
+conn.commit()
 ## Task 3 - Making queries, saving data, fetching data
 
 # All of the following sub-tasks require writing SQL statements 
@@ -99,44 +167,60 @@ CACHE_FNAME = "206_APIsAndDBs_cache.json"
 # Make a query to select all of the records in the Users database. 
 # Save the list of tuples in a variable called users_info.
 
-users_info = True
+command = ("SELECT * FROM Users")
+cur.execute(command)
+users_info = cur.fetchall()
 
 # Make a query to select all of the user screen names from the database. 
 # Save a resulting list of strings (NOT tuples, the strings inside them!) 
 # in the variable screen_names. HINT: a list comprehension will make 
 # this easier to complete! 
-screen_names = True
+command = ("SELECT screen_name FROM Users")
+cur.execute(command)
+all_tuples = cur.fetchall()
+screen_names = []
+for tup in all_tuples:
+	screen_names.append(tup[0])
 
 
 # Make a query to select all of the tweets (full rows of tweet information)
 # that have been retweeted more than 10 times. Save the result 
 # (a list of tuples, or an empty list) in a variable called retweets.
-retweets = True
+command = ("SELECT * FROM Tweets WHERE retweets > 10")
+cur.execute(command)
+retweets = cur.fetchall()
 
 
 # Make a query to select all the descriptions (descriptions only) of 
 # the users who have favorited more than 500 tweets. Access all those 
 # strings, and save them in a variable called favorites, 
 # which should ultimately be a list of strings.
-favorites = True
+command = ("SELECT description FROM Users WHERE num_favs > 500")
+cur.execute(command)
+tup_favorites = cur.fetchall()
+favorites = []
+for tup in tup_favorites:
+	favorites.append(tup[0])
 
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 
 # elements in each tuple: the user screenname and the text of the 
-# tweet. Save the resulting list of tuples in a variable called joined_data2.
-joined_data = True
+# tweet. Save the resulting list of tuples in a variable called joined_data.
+command = ("SELECT Users.screen_name, Tweets.text FROM Users INNER JOIN Tweets ON Users.user_id = Tweets.user_posted")
+cur.execute(command)
+joined_data = cur.fetchall()
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 
 # elements in each tuple: the user screenname and the text of the 
 # tweet in descending order based on retweets. Save the resulting 
 # list of tuples in a variable called joined_data2.
-
-joined_data2 = True
-
-
+command = ("SELECT Users.screen_name, Tweets.text FROM Users INNER JOIN Tweets ON Users.user_id = Tweets.user_posted ORDER BY Tweets.retweets DESC")
+cur.execute(command)
+joined_data2 = cur.fetchall()
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END 
 ### OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, 
 ### but it's a pain). ###
+conn.close()
 
 ###### TESTS APPEAR BELOW THIS LINE ######
 ###### Note that the tests are necessary to pass, but not sufficient -- 
@@ -240,3 +324,11 @@ class Task3(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main(verbosity=2)
+
+
+
+
+
+
+
+
