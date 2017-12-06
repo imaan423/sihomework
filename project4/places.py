@@ -124,7 +124,7 @@ conn.close()
 
 
 
-
+print (diction)
 
 
 

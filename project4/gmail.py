@@ -2,6 +2,10 @@
 #Imaan Munir
 import requests, json, sqlite3
 from quickstart import get_profile
+import datetime
+import sqlite3
+import plotly
+from plotly.graph_objs import Bar, Layout, Scatter, Line
 
 def get_messages(service):
 	response = service.users().messages().list(userId='me').execute()
@@ -66,7 +70,7 @@ conn.close()
 
 
 
-
+print (diction)
 
 
 
